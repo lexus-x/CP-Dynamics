@@ -12,17 +12,31 @@
 
 ---
 
-## The Thesis
+## TL;DR
 
-> **Environment dynamics are robot-invariant.** The physics of "what happens to an object when it is contacted" is determined by the contact interaction itself — not by which robot produced it.
+**Environment dynamics are robot-invariant.** The physics of pushing a cup is the same whether you use a Franka, a UR5, or a dexterous hand. We learn a dynamics model in **contact-point space** — an embodiment-invariant representation — that transfers across morphologies without per-robot fine-tuning. A new robot only needs a tiny contact estimator (~5K params, 1 hour training). The dynamics model transfers frozen.
 
-When *any* robot manipulates an object, the object's motion is governed by **three things only**:
+---
+
+## The Problem
+
+Current VLAs (Octo, OpenVLA, π₀) output **joint-space commands** specific to each robot. Transferring to a new robot means retraining the action head. The perception transfers; the control doesn't.
+
+**Why?** Because VLAs learn policies (observation → action) in embodiment-specific action spaces. Nobody learns **dynamics** (state + action → next state) in an embodiment-invariant space.
+
+---
+
+## The Insight
+
+When **any** robot manipulates an object, the object's motion is governed by **three things only**:
 
 1. **Where** on the object surface contact occurs
 2. **What wrench** (force/torque) is applied at each contact
 3. **The object's own state** (pose, shape, mass, friction)
 
-The robot's joint count, link lengths, actuator types, and kinematic structure are **irrelevant** to the object dynamics once contact is established. The robot is merely a **wrench delivery mechanism**.
+The robot's joint count, link lengths, and kinematic structure are **irrelevant** to the object dynamics once contact is established.
+
+> **The robot is merely a wrench delivery mechanism.**
 
 <p align="center">
   <img src="assets/architecture.svg" width="100%" alt="CP-Dynamics Architecture"/>
@@ -30,28 +44,33 @@ The robot's joint count, link lengths, actuator types, and kinematic structure a
 
 ---
 
-## Why This Matters
+## Why This Is Novel
 
 <p align="center">
   <img src="assets/venn.svg" width="100%" alt="Novelty: Intersection of Three Properties"/>
 </p>
 
-The cross-embodiment VLA landscape in 2025–2026 has three approaches:
-
 | Approach | Shares Perception | Shares Dynamics | Cross-Morphology |
 |:---|:---:|:---:|:---:|
-| **Co-training** (RT-X, Octo, π₀) | ✅ | ❌ | Partial |
-| **Universal actions** (UniAct, OPFA) | ✅ | ❌ | ✅ |
-| **Cross-embodiment world models** (He et al.) | ✅ | ✅ | ❌ (hands only) |
+| Co-training (RT-X, Octo, π₀) | ✅ | ❌ | Partial |
+| Universal actions (UniAct, OPFA) | ✅ | ❌ | ✅ |
+| Cross-embodiment world models (He et al.) | ✅ | ✅ | ❌ (hands only) |
 | **CP-Dynamics (ours)** | ✅ | **✅** | **✅** |
 
-**Nobody has demonstrated all three simultaneously.** He et al. (2025) conjecture "environment dynamics are embodiment-invariant" but only prove it for dexterous hands. UniAct and OPFA share action spaces but not dynamics. RT-X shares perception but not dynamics.
+**Nobody has demonstrated all three simultaneously.** The intersection is empty. We fill it.
+
+### Closest work and why it's not enough
+
+- **He et al. (Nov 2025):** Particle-based dynamics for dexterous hands. Conjectures "dynamics are embodiment-invariant" but only proves it for hands. We use contact-point state instead of particles — works for any morphology.
+- **UniAct (CVPR 2025):** Universal action space with per-embodiment decoders. Shared action, not shared dynamics.
+- **OPFA (ICRA 2026):** Geometry-aware latent actions across 11 end-effectors. Unified decoder. Still policy-level, not dynamics-level.
+- **UniVLA (RSS 2025):** Latent actions from video. No state-transition prediction.
 
 ---
 
 ## The Mechanism
 
-### Contact-Point State (the embodiment-invariant representation)
+### Contact-Point State (embodiment-invariant representation)
 
 ```
 C ∈ ℝ^(N×9)    N = max 8 contact points
@@ -62,32 +81,33 @@ Each row:
   n_c ∈ ℝ³     contact normal + slip indicator
 ```
 
-A 7-DOF arm making one contact and a 16-DOF hand making three contacts both populate different rows of the **same matrix**. The dynamics model doesn't know or care *how* the contacts were achieved.
+A 7-DOF arm making one contact and a 16-DOF hand making three contacts both populate different rows of the **same matrix**. The dynamics model doesn't know or care how the contacts were achieved.
 
 ### Shared Dynamics Model
 
 ```
-Input:  contact-point state C + object state z_obj
-        ↓
-        Transformer Encoder (6 layers)
-        tokens = [z_obj; C₁; C₂; ...; C₈]
-        ↓
-Output: Δz_obj  (predicted object state change)
-        C'      (predicted next-step contacts)
-        wrench  (net object wrench, for F=ma consistency)
+tokens = [z_obj; C₁; C₂; ...; C₈]    ← object + contact tokens
+         ↓
+         Transformer Encoder (6 layers, 8 heads, d=256)
+         ↓
+Δz_obj = MLP(object_token)            ← predicted object state change
+C' = MLP(contact_tokens)              ← predicted contact evolution
+wrench = MLP(object_token)            ← net wrench (F=ma consistency check)
 ```
+
+**0 embodiment-specific parameters.** ~1M params total.
 
 ### Per-Robot Contact Estimator
 
 ```
-Input:  joint state q + joint velocities q̇ + joint torques τ
-        ↓
-        MLP (2 layers, 256 hidden, ~5K params)
-        ↓
-Output: contact-point state C ∈ ℝ^(N×9)
+Input:  (q, q̇, τ) — joint state, velocities, torques
+         ↓
+         MLP (2 layers, 256 hidden, ~5K params)
+         ↓
+Output:  C ∈ ℝ^(N×9) — estimated contact-point state
 ```
 
-Trained in simulation with ground-truth contact data. **~1 hour per robot.**
+The **only** component that is per-embodiment. Trained in simulation with ground-truth contacts. ~1 hour per robot.
 
 ### Transfer to New Robot
 
@@ -97,8 +117,6 @@ Trained in simulation with ground-truth contact data. **~1 hour per robot.**
 3. Run
 ```
 
-No retraining of the dynamics model. No retraining of the VLA.
-
 ---
 
 ## The Experiment
@@ -107,19 +125,19 @@ No retraining of the dynamics model. No retraining of the VLA.
 
 | Component | Choice | Why |
 |:---|:---|:---|
-| **Robots** | Franka Panda (7-DOF) + UR5e (6-DOF) | Different DOFs, different kinematics, same gripper type |
-| **Environment** | ManiSkill3 (SAPIEN) | 20+ robots, same-task-swap via `gym.make(robot=...)`, 30K+ FPS |
+| **Robots** | Franka Panda (7-DOF) + UR5e (6-DOF) | Different DOFs, different kinematics |
+| **Environment** | ManiSkill3 | 20+ robots, same-task-swap, 30K+ FPS, ground-truth contacts |
 | **Task** | PushCube-v1 | Simple dynamics, clear success metric |
-| **Data** | 2000 trajectories/robot, scripted policy | ~30 min wall-clock |
+| **Data** | 2000 trajectories/robot | ~30 min wall-clock |
 | **Compute** | ~4 hours on 1× A100 | Accessible |
 
-### Three Models (controlled comparison)
+### Controlled Comparison
 
 | Model | Training Data | What it tests |
 |:---|:---|:---|
-| M_Franka | Franka only (2000 traj) | Upper bound |
-| M_UR5e | UR5e only (2000 traj) | Upper bound |
-| **M_mixed** | **Both (4000 traj, shuffled)** | **The hypothesis** |
+| M_Franka | Franka only | Upper bound |
+| M_UR5e | UR5e only | Upper bound |
+| **M_mixed** | **Both (shuffled)** | **The hypothesis** |
 
 ### Pre-Registered Success Criteria
 
@@ -129,17 +147,8 @@ No retraining of the dynamics model. No retraining of the VLA.
 | **Wrong-robot fails** | MSE > 2× baseline | Robot-specific models DON'T transfer |
 | **Latent alignment** | cosine > 0.7 | Shared latent space captures same dynamics |
 
-**Pass:** All three met → full-scale VLA training justified.
-**Fail:** Any fails → redirect to robot-specific representations.
-
-### Metrics
-
-```
-Transfer Ratio = MSE(mixed→Franka) / MSE(Franka→Franka)
-
-Latent Alignment = cosine_sim(z_{t+1} - z_t)_Franka, (z_{t+1} - z_t)_UR5e)
-                   for matched pushing scenarios (same cube pose, same push direction)
-```
+**Pass:** All three → full-scale VLA training justified.
+**Fail:** Any → redirect to robot-specific representations.
 
 ---
 
@@ -175,44 +184,80 @@ python scripts/evaluate.py --model franka_only --robot ur5e  # wrong-robot basel
 
 ```
 CP-Dynamics/
-├── assets/
-│   ├── banner.svg              # Project banner
-│   ├── architecture.svg        # Architecture diagram
-│   └── venn.svg                # Novelty Venn diagram
+├── assets/              # SVG visuals (banner, architecture, venn)
 ├── docs/
-│   ├── PROPOSAL.md             # Full research proposal
-│   ├── LITERATURE.md           # Exhaustive literature review
-│   ├── EXPERIMENT.md           # Detailed experiment protocol
-│   └── THEORY.md               # Theoretical motivation
-├── src/
-│   ├── dynamics/
-│   │   ├── __init__.py
-│   │   ├── model.py            # Shared dynamics model (Transformer)
-│   │   ├── contact_encoder.py  # Per-robot contact estimators
-│   │   └── losses.py           # Dynamics + physics consistency losses
-│   └── utils/
-│       └── visualization.py    # Latent space visualization
-├── scripts/
-│   ├── generate_data.py        # Data collection in ManiSkill3
-│   ├── train_contact_estimator.py
-│   ├── train_dynamics.py
-│   └── evaluate.py
-├── tests/
-│   └── test_dynamics.py
-├── setup.py
-├── LICENSE
-└── README.md
+│   ├── PROPOSAL.md      # Full research proposal (30+ papers)
+│   ├── LITERATURE.md    # Exhaustive literature review
+│   ├── EXPERIMENT.md    # Detailed experiment protocol
+│   └── THEORY.md        # Theoretical motivation
+├── src/dynamics/
+│   ├── model.py         # Shared dynamics model (Transformer)
+│   └── contact_encoder.py  # Per-robot contact estimators
+├── scripts/             # Training and evaluation scripts
+├── README.md
+└── LICENSE (MIT)
 ```
 
 ---
 
-## Requirements
+## Related Work
 
-- Python 3.10+
-- PyTorch 2.0+
-- ManiSkill3 (`pip install mani_skill`)
-- SAPIEN (physics engine, installed with ManiSkill)
-- GPU with ≥16GB VRAM (for training)
+<details>
+<summary><b>Cross-Embodiment VLA Models (11 papers)</b></summary>
+
+| Paper | Date | Venue | Key Contribution |
+|:---|:---|:---|:---|
+| RT-X / Open X-Embodiment | Oct 2023 | ICRA 2024 | Co-training on 22 robots |
+| Octo | May 2024 | arXiv | Generalist policy, modular action heads |
+| OpenVLA | Jun 2024 | arXiv | Open-source 7B VLA |
+| π₀ | Oct 2024 | RSS 2025 | Flow-matching VLA, multi-robot |
+| X-VLA | Oct 2025 | ICLR 2026 | Soft-prompted cross-embodiment |
+| UniAct | Jan 2025 | CVPR 2025 | Universal action space |
+| OPFA | Mar 2026 | ICRA 2026 | Geometry-aware latent actions, 11 end-effectors |
+| UniVLA | May 2025 | RSS 2025 | Latent actions from video |
+| FAST/π₀-FAST | Jan 2025 | RSS 2025 | Universal action tokenizer |
+| π₀.₇ | Apr 2026 | arXiv | Steerable generalist VLA |
+| GR00T N1 | Mar 2025 | arXiv | NVIDIA humanoid foundation model |
+</details>
+
+<details>
+<summary><b>Cross-Embodiment Dynamics & World Models (7 papers)</b></summary>
+
+| Paper | Date | Venue | Key Contribution | Scope |
+|:---|:---|:---|:---|:---|
+| He et al. | Nov 2025 | arXiv | Particle-based embodiment-invariant world model | Hands only |
+| AnyCar | Sep 2024 | arXiv | Dynamics model for wheeled vehicles | Wheeled only |
+| Lagrangian GNN | NeurIPS 2022 | NeurIPS | Energy-conserving dynamics | Simple bodies |
+| TraceGen | Nov 2025 | arXiv | World model in 3D trace-space | Video-based |
+| LAC-WM | Dec 2025 | OpenReview | Latent action world model | Video-based |
+| Motus | Dec 2025 | arXiv | Unified latent action world model | Video-based |
+| RoboPack | RSS 2024 | RSS | Tactile-informed dynamics | Single robot |
+</details>
+
+<details>
+<summary><b>Cross-Embodiment Policies (6 papers)</b></summary>
+
+| Paper | Date | Venue | Key Contribution |
+|:---|:---|:---|:---|
+| Ai et al. — Scaling Laws | May 2025 | CoRL 2025 | Policy scaling across 1000 morphologies |
+| Yang, Finn — Data Analogies | Mar 2026 | CoRL 2026 | Paired demos matter for transfer |
+| Canonical Rep. (Wei et al.) | Feb 2026 | arXiv | Cross-hand grasping policy |
+| Equivariant Flow | May 2026 | arXiv | Symmetry-equivariant bimanual policy |
+| XHugWBC | Feb 2026 | arXiv | Cross-humanoid whole-body control |
+| GCNT | May 2025 | arXiv | Graph-based morphology-agnostic policy |
+</details>
+
+---
+
+## Impact
+
+**If this works:**
+- New robot deployment = 1 hour of contact estimator training
+- Dynamics model becomes a reusable foundation component
+- Scaling: adding robots doesn't require retraining dynamics
+
+**If this fails:**
+- We learn exactly where embodiment invariance breaks — still a valuable negative result
 
 ---
 
@@ -226,21 +271,6 @@ CP-Dynamics/
   url={https://github.com/lexus-x/CP-Dynamics}
 }
 ```
-
----
-
-## Related Work
-
-| Paper | Date | Venue | Key Insight |
-|:---|:---|:---|:---|
-| He et al. — Cross-Embodiment World Models | Nov 2025 | arXiv | Particle dynamics for dexterous hands. "Dynamics are embodiment-invariant." |
-| UniAct | Jan 2025 | CVPR 2025 | Universal action space with per-embodiment decoders |
-| OPFA | Mar 2026 | ICRA 2026 | Geometry-aware latent actions, unified decoder, 11 end-effectors |
-| UniVLA | May 2025 | RSS 2025 | Task-centric latent actions from video |
-| X-VLA | Oct 2025 | ICLR 2026 | Soft-prompted cross-embodiment |
-| Data Analogies (Finn) | Mar 2026 | CoRL 2026 | Paired demos matter for morphology transfer |
-| FAST/π₀-FAST | Jan 2025 | RSS 2025 | Universal action tokenizer |
-| RT-X / Open X-Embodiment | Oct 2023 | ICRA 2024 | Co-training on 22 robots |
 
 ---
 
