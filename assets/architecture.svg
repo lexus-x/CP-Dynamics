@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#161b22;stop-opacity:1" />
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#58a6ff"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3fb950"/>
+    </marker>
+  </defs>
+  <rect width="900" height="520" fill="url(#bg2)" rx="12"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" font-family="system-ui" font-size="20" font-weight="700" fill="white">Architecture: Contact-Point Dynamics (CPD)</text>
+
+  <!-- Current VLA (top) -->
+  <rect x="50" y="55" width="800" height="80" rx="8" fill="rgba(255,100,100,0.06)" stroke="rgba(255,100,100,0.2)" stroke-width="1"/>
+  <text x="70" y="75" font-family="system-ui" font-size="12" font-weight="600" fill="#f85149">CURRENT VLAs (Octo, OpenVLA, π₀)</text>
+  <text x="70" y="95" font-family="system-ui" font-size="11" fill="#8b949e">Image + Language →</text>
+  <rect x="225" y="82" width="80" height="22" rx="4" fill="rgba(255,100,100,0.15)" stroke="rgba(255,100,100,0.3)" stroke-width="1"/>
+  <text x="265" y="97" text-anchor="middle" font-family="system-ui" font-size="10" fill="#f85149">VLA</text>
+  <text x="320" y="95" font-family="system-ui" font-size="11" fill="#8b949e">→</text>
+  <rect x="340" y="82" width="120" height="22" rx="4" fill="rgba(255,100,100,0.15)" stroke="rgba(255,100,100,0.3)" stroke-width="1"/>
+  <text x="400" y="97" text-anchor="middle" font-family="system-ui" font-size="10" fill="#f85149">joint angles</text>
+  <text x="475" y="95" font-family="system-ui" font-size="11" fill="#8b949e">← robot-specific, doesn't transfer</text>
+
+  <!-- Proposed (bottom) -->
+  <rect x="50" y="155" width="800" height="340" rx="8" fill="rgba(0,212,255,0.04)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+  <text x="70" y="180" font-family="system-ui" font-size="12" font-weight="600" fill="#58a6ff">PROPOSED: CP-Dynamics</text>
+
+  <!-- VLA box -->
+  <rect x="80" y="200" width="120" height="40" rx="6" fill="rgba(88,166,255,0.12)" stroke="rgba(88,166,255,0.4)" stroke-width="1.5"/>
+  <text x="140" y="215" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#58a6ff">VLA Backbone</text>
+  <text x="140" y="230" text-anchor="middle" font-family="system-ui" font-size="9" fill="#8b949e">frozen</text>
+
+  <!-- Arrow down from VLA -->
+  <line x1="140" y1="240" x2="140" y2="270" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Contact Target Head -->
+  <rect x="70" y="275" width="140" height="35" rx="6" fill="rgba(123,47,247,0.12)" stroke="rgba(123,47,247,0.4)" stroke-width="1.5"/>
+  <text x="140" y="290" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#bc8cff">Contact Target Head</text>
+  <text x="140" y="302" text-anchor="middle" font-family="system-ui" font-size="8" fill="#8b949e">visual features → C_target ∈ ℝ^(N×9)</text>
+
+  <!-- Arrow to CPD -->
+  <line x1="210" y1="292" x2="340" y2="292" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- CPD Model (center) -->
+  <rect x="350" y="210" width="220" height="170" rx="10" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.5)" stroke-width="2"/>
+  <text x="460" y="235" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#00d4ff">Shared Dynamics</text>
+  <text x="460" y="255" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#00d4ff">Model</text>
+  <text x="460" y="280" text-anchor="middle" font-family="system-ui" font-size="10" fill="#8b949e">Transformer (6 layers)</text>
+  <text x="460" y="300" text-anchor="middle" font-family="system-ui" font-size="10" fill="#8b949e">tokens = [z_obj; C₁...C₈]</text>
+  <text x="460" y="320" text-anchor="middle" font-family="system-ui" font-size="10" fill="#8b949e">~1M params</text>
+  <rect x="380" y="335" width="160" height="25" rx="4" fill="rgba(63,185,80,0.12)" stroke="rgba(63,185,80,0.3)" stroke-width="1"/>
+  <text x="460" y="352" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#3fb950">0 embodiment-specific params</text>
+
+  <!-- Output arrows from CPD -->
+  <line x1="460" y1="380" x2="350" y2="430" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <line x1="460" y1="380" x2="570" y2="430" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+  <!-- Object state output -->
+  <rect x="270" y="430" width="160" height="40" rx="6" fill="rgba(63,185,80,0.12)" stroke="rgba(63,185,80,0.4)" stroke-width="1.5"/>
+  <text x="350" y="448" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#3fb950">Δ Object State</text>
+  <text x="350" y="462" text-anchor="middle" font-family="system-ui" font-size="9" fill="#8b949e">embodiment-invariant</text>
+
+  <!-- Robot adapter output -->
+  <rect x="490" y="430" width="160" height="40" rx="6" fill="rgba(255,200,50,0.12)" stroke="rgba(255,200,50,0.4)" stroke-width="1.5"/>
+  <text x="570" y="448" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#d29922">Robot Adapter</text>
+  <text x="570" y="462" text-anchor="middle" font-family="system-ui" font-size="9" fill="#8b949e">z → joint commands</text>
+
+  <!-- Per-robot encoders (right side) -->
+  <rect x="680" y="200" width="150" height="280" rx="8" fill="rgba(255,200,50,0.04)" stroke="rgba(255,200,50,0.2)" stroke-width="1"/>
+  <text x="755" y="225" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#d29922">Per-Robot</text>
+  <text x="755" y="240" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#d29922">Encoders</text>
+
+  <rect x="700" y="260" width="110" height="30" rx="4" fill="rgba(255,200,50,0.1)" stroke="rgba(255,200,50,0.3)" stroke-width="1"/>
+  <text x="755" y="279" text-anchor="middle" font-family="system-ui" font-size="9" fill="#d29922">Franka (7-DOF)</text>
+
+  <rect x="700" y="300" width="110" height="30" rx="4" fill="rgba(255,200,50,0.1)" stroke="rgba(255,200,50,0.3)" stroke-width="1"/>
+  <text x="755" y="319" text-anchor="middle" font-family="system-ui" font-size="9" fill="#d29922">UR5e (6-DOF)</text>
+
+  <rect x="700" y="340" width="110" height="30" rx="4" fill="rgba(255,200,50,0.1)" stroke="rgba(255,200,50,0.3)" stroke-width="1"/>
+  <text x="755" y="359" text-anchor="middle" font-family="system-ui" font-size="9" fill="#d29922">Allegro (16-DOF)</text>
+
+  <rect x="700" y="380" width="110" height="30" rx="4" fill="rgba(255,200,50,0.15)" stroke="rgba(255,200,50,0.4)" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="755" y="399" text-anchor="middle" font-family="system-ui" font-size="9" fill="#d29922">New Robot?</text>
+
+  <!-- Arrow from encoders to CPD -->
+  <line x1="700" y1="310" x2="570" y2="292" stroke="#d29922" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+
+  <!-- Labels -->
+  <text x="640" y="290" font-family="system-ui" font-size="9" fill="#d29922" transform="rotate(-15, 640, 290)">contact state C</text>
+
+  <!-- Bottom annotation -->
+  <text x="450" y="508" text-anchor="middle" font-family="system-ui" font-size="11" fill="#484f58">
+    The robot is merely a wrench delivery mechanism. Physics doesn't care which arm is pushing.
+  </text>
+</svg>

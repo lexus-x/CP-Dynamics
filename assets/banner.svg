@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="280" viewBox="0 0 900 280">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1a3a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7b2ff7;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="900" height="280" fill="url(#bg)" rx="12"/>
+
+  <!-- Title -->
+  <text x="450" y="60" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="800" fill="white" letter-spacing="-1">
+    CP-Dynamics
+  </text>
+  <text x="450" y="95" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#888" font-weight="400">
+    Contact-Point Dynamics for Embodiment-Invariant VLA Models
+  </text>
+
+  <!-- Divider -->
+  <rect x="150" y="115" width="600" height="2" fill="url(#accent)" rx="1"/>
+
+  <!-- Three boxes -->
+  <g transform="translate(80, 145)">
+    <rect width="220" height="90" rx="8" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.3)" stroke-width="1"/>
+    <text x="110" y="30" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#00d4ff">SHARED DYNAMICS</text>
+    <text x="110" y="50" text-anchor="middle" font-family="system-ui" font-size="11" fill="#aaa">Contact-point state → Δ object</text>
+    <text x="110" y="68" text-anchor="middle" font-family="system-ui" font-size="11" fill="#aaa">Physics is robot-invariant</text>
+  </g>
+
+  <g transform="translate(340, 145)">
+    <rect width="220" height="90" rx="8" fill="rgba(123,47,247,0.08)" stroke="rgba(123,47,247,0.3)" stroke-width="1"/>
+    <text x="110" y="30" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#7b2ff7">PER-ROBOT ADAPTER</text>
+    <text x="110" y="50" text-anchor="middle" font-family="system-ui" font-size="11" fill="#aaa">Joint state → contact estimation</text>
+    <text x="110" y="68" text-anchor="middle" font-family="system-ui" font-size="11" fill="#aaa">~5K params, 1hr training</text>
+  </g>
+
+  <g transform="translate(600, 145)">
+    <rect width="220" height="90" rx="8" fill="rgba(0,255,136,0.08)" stroke="rgba(0,255,136,0.3)" stroke-width="1"/>
+    <text x="110" y="30" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#00ff88">ZERO-SHOT TRANSFER</text>
+    <text x="110" y="50" text-anchor="middle" font-family="system-ui" font-size="11" fill="#aaa">New robot = new adapter only</text>
+    <text x="110" y="68" text-anchor="middle" font-family="system-ui" font-size="11" fill="#aaa">Dynamics model transfers frozen</text>
+  </g>
+
+  <!-- Bottom tagline -->
+  <text x="450" y="265" text-anchor="middle" font-family="system-ui" font-size="12" fill="#555">
+    arXiv · ICML 2026 · github.com/lexus-x/CP-Dynamics
+  </text>
+</svg>
